@@ -15,6 +15,7 @@ from taskforge.core import (
     plan_commands,
     resolve_order,
     run,
+    validate_taskfile,
 )
 
 __version__ = TOOL_VERSION
@@ -35,4 +36,5 @@ __all__ = [
     "plan_commands",
     "resolve_order",
     "run",
+    "validate_taskfile",
 ]

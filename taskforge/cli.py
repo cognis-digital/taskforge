@@ -32,6 +32,8 @@ def _build_parser() -> argparse.ArgumentParser:
     r.add_argument("task")
     r.add_argument("--dry-run", action="store_true",
                    help="Print the command plan without executing.")
+    r.add_argument("--var", action="append", default=[], metavar="K=V",
+                   help="Override a variable (repeatable, highest precedence).")
     r.add_argument("--format", choices=("table", "json"), default="table")
 
     sub.add_parser("list", help="List the tasks defined in the file.")
@@ -39,14 +41,28 @@ def _build_parser() -> argparse.ArgumentParser:
     g = sub.add_parser("graph", help="Show the resolved run order for a task.")
     g.add_argument("task")
 
+    vl = sub.add_parser("validate", help="Validate deps, cycles, and commands.")
+    vl.add_argument("--format", choices=("table", "json"), default="table")
+
     sub.add_parser("mcp", help="Run as an MCP server (stdio JSON-RPC).")
     return p
+
+
+def _parse_vars(items):
+    out = {}
+    for item in items:
+        if "=" not in item:
+            raise TaskforgeError(f"--var expects K=V, got {item!r}")
+        k, v = item.split("=", 1)
+        out[k] = v
+    return out
 
 
 def _run_run(a) -> int:
     try:
         tf = load_taskfile(a.file)
-        res = run(tf, a.task, dry_run=a.dry_run)
+        overrides = _parse_vars(a.var)
+        res = run(tf, a.task, dry_run=a.dry_run, overrides=overrides or None)
     except (OSError, TaskforgeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -98,6 +114,24 @@ def _run_graph(a) -> int:
     return 0
 
 
+def _run_validate(a) -> int:
+    from taskforge import validate_taskfile
+    try:
+        res = validate_taskfile(load_taskfile(a.file))
+    except (OSError, TaskforgeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if a.format == "json":
+        print(json.dumps(res, indent=2))
+    else:
+        print(f"taskforge validate — {res['task_count']} task(s)")
+        print("=" * 60)
+        for p in res["problems"]:
+            print(f"  ! {p}")
+        print("RESULT: " + ("PASS" if res["ok"] else "FAIL"))
+    return 0 if res["ok"] else 1
+
+
 def _run_mcp() -> int:
     from taskforge.mcp_server import run_mcp_server
     run_mcp_server()
@@ -113,6 +147,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return _run_list(args)
     if args.command == "graph":
         return _run_graph(args)
+    if args.command == "validate":
+        return _run_validate(args)
     if args.command == "mcp":
         return _run_mcp()
     parser.print_help(sys.stderr)

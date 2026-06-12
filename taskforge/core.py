@@ -328,8 +328,13 @@ def expand_matrix(matrix: Dict[str, List[Any]]) -> List[Dict[str, Any]]:
     return [dict(zip(keys, c)) for c in combos]
 
 
-def plan_commands(tf: TaskFile, target: str) -> List[Dict[str, Any]]:
-    """Compute the full ordered command plan (with matrix + interpolation)."""
+def plan_commands(tf: TaskFile, target: str,
+                  overrides: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """Compute the full ordered command plan (with matrix + interpolation).
+
+    ``overrides`` are highest-precedence variables (e.g. from ``--var K=V``),
+    applied over file vars, task vars, and matrix values.
+    """
     plan: List[Dict[str, Any]] = []
     for name in resolve_order(tf, target):
         task = tf.tasks[name]
@@ -338,6 +343,8 @@ def plan_commands(tf: TaskFile, target: str) -> List[Dict[str, Any]]:
             scope.update(tf.vars)
             scope.update(task.vars)
             scope.update(mscope)
+            if overrides:
+                scope.update(overrides)
             for cmd in task.cmds:
                 plan.append({
                     "task": name,
@@ -348,14 +355,36 @@ def plan_commands(tf: TaskFile, target: str) -> List[Dict[str, Any]]:
     return plan
 
 
+def validate_taskfile(tf: TaskFile) -> Dict[str, Any]:
+    """Check every task: deps exist, no cycles, at least one has commands."""
+    problems: List[str] = []
+    for name, task in tf.tasks.items():
+        for dep in task.deps:
+            if dep not in tf.tasks:
+                problems.append(f"task '{name}' depends on unknown task '{dep}'")
+    # Cycle check across every task as a potential root.
+    for name in tf.tasks:
+        try:
+            resolve_order(tf, name)
+        except TaskforgeError as exc:
+            msg = str(exc)
+            if "cycle" in msg and msg not in problems:
+                problems.append(msg)
+    if not any(t.cmds for t in tf.tasks.values()):
+        problems.append("no task defines any commands")
+    return {"ok": not problems, "task_count": len(tf.tasks),
+            "problems": sorted(set(problems))}
+
+
 # --------------------------------------------------------------------------- #
 # Run
 # --------------------------------------------------------------------------- #
 
 def run(tf: TaskFile, target: str, *, dry_run: bool = False,
-        cwd: Optional[str] = None) -> Dict[str, Any]:
+        cwd: Optional[str] = None,
+        overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Execute (or with dry_run, just plan) the command plan for ``target``."""
-    plan = plan_commands(tf, target)
+    plan = plan_commands(tf, target, overrides=overrides)
     base = cwd or tf.base_dir
     if dry_run:
         return {"target": target, "dry_run": True, "steps": plan,
