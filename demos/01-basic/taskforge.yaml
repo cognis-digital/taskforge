@@ -1,0 +1,30 @@
+# taskforge.yaml — a small build/test/release pipeline.
+vars:
+  app: hello-edge
+  registry: localhost:5000
+
+tasks:
+  clean:
+    desc: Remove build artifacts.
+    cmds:
+      - echo cleaning ${app}
+
+  build:
+    desc: Build the app (depends on clean).
+    deps: [clean]
+    cmds:
+      - echo building ${app}
+
+  test:
+    desc: Run the test matrix across versions.
+    deps: [build]
+    matrix:
+      py: ["3.10", "3.12"]
+    cmds:
+      - echo testing ${app} on python ${py}
+
+  release:
+    desc: Build, test, then publish.
+    deps: [test]
+    cmds:
+      - echo publishing ${app} to ${registry}
