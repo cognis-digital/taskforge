@@ -86,3 +86,31 @@ branding.
 
 Part of the **Cognis Neural Suite** — 300+ source-available tools organized across 12 domains under the JTF MERIDIAN command structure. See the [suite on GitHub](https://github.com/cognis-digital) and [jtf-meridian](https://github.com/cognis-digital/jtf-meridian) for how the pieces fit together.
 <!-- cognis:domains:end -->
+
+## Usage — step by step
+
+`taskforge` runs declarative tasks from a `taskforge.yaml` with dependencies, variable interpolation, a fan-out matrix, and dry-run plans.
+
+1. **Install** (pure stdlib, Python 3.10+):
+   ```bash
+   pip install "git+https://github.com/cognis-digital/taskforge.git"
+   ```
+2. **List and validate** the tasks defined in the file (`-f` points at a non-default path; `validate` checks deps and cycles):
+   ```bash
+   taskforge list
+   taskforge validate
+   ```
+3. **Preview the command plan** for a task — deps + matrix + interpolation, with nothing executed:
+   ```bash
+   taskforge run release --dry-run
+   taskforge graph release          # just the resolved run order
+   ```
+4. **Run it** (deps run first), overriding variables at the highest precedence:
+   ```bash
+   taskforge run release --var registry=ghcr.io/cognis
+   ```
+5. **Automate in CI** — `run` exits non-zero on the first failing step; `--format json` feeds the result to other tooling:
+   ```bash
+   taskforge run test --format json
+   ```
+   Or run it as a local MCP server (stdio JSON-RPC): `taskforge mcp`.
