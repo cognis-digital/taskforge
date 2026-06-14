@@ -34,3 +34,6 @@ taskforge = "taskforge.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["taskforge"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
