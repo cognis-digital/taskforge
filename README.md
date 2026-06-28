@@ -9,6 +9,66 @@ binary to download, runs anywhere Python does (including air-gapped CI).
 
 ---
 
+
+<!-- cognis:example:start -->
+## 🔎 Example output
+
+Real, reproducible output from the tool — runs offline:
+
+```console
+$ taskforge-emit --version
+taskforge 0.1.0
+```
+
+```console
+$ taskforge-emit --help
+usage: taskforge [-h] [--version] [-f FILE] {run,list,graph,validate,mcp} ...
+
+Declarative task runner — deps, variable interpolation, matrix fan-out,
+includes, and dry-run command plans.
+
+positional arguments:
+  {run,list,graph,validate,mcp}
+    run                 Run a task (and its dependencies).
+    list                List the tasks defined in the file.
+    graph               Show the resolved run order for a task.
+    validate            Validate deps, cycles, and commands.
+    mcp                 Run as an MCP server (stdio JSON-RPC).
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  -f, --file FILE       Task file (default: taskforge.yaml).
+```
+
+> Blocks above are real `taskforge` output — reproduce them from a clone.
+
+**Sample result format** _(illustrative values — run on your own data for real findings):_
+
+```
+{
+"taskforge": {
+"platform": "stix",
+"findings": [
+{
+"id": "1234567890",
+"name": "Suspicious Network Traffic",
+"description": "Network traffic detected from unknown IP address",
+"type": "indicator"
+},
+{
+"id": "2345678901",
+"name": "Malware Detection",
+"description": "Malware detected on compromised host",
+"type": "attack-pattern"
+}
+]
+}
+}
+```
+
+<!-- cognis:example:end -->
+
 ## A task file
 
 ```yaml

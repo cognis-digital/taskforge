@@ -1,0 +1,19 @@
+$ taskforge-emit --help
+
+usage: taskforge [-h] [--version] [-f FILE] {run,list,graph,validate,mcp} ...
+
+Declarative task runner — deps, variable interpolation, matrix fan-out,
+includes, and dry-run command plans.
+
+positional arguments:
+  {run,list,graph,validate,mcp}
+    run                 Run a task (and its dependencies).
+    list                List the tasks defined in the file.
+    graph               Show the resolved run order for a task.
+    validate            Validate deps, cycles, and commands.
+    mcp                 Run as an MCP server (stdio JSON-RPC).
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  -f, --file FILE       Task file (default: taskforge.yaml).

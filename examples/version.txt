@@ -1,0 +1,3 @@
+$ taskforge-emit --version
+
+taskforge 0.1.0
